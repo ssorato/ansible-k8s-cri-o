@@ -1,0 +1,18 @@
+all:
+  children:
+    k8s:
+      vars:
+        os_version: "xUbuntu_20.04"
+        crio_version: "1.20"
+        remote_user: ssorato
+      children:
+        masters:
+          hosts:
+            192.168.123.61:
+        workers:
+          hosts:
+            192.168.123.62:
+            192.168.123.63:
+    storages:
+      hosts:
+        192.168.123.64:
