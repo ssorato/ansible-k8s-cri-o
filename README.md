@@ -4,7 +4,7 @@ The ansible playbook is based on [Kubernetes setup with CRI-O Runtime](https://g
 
 I have also added a storage with iSCSI and NFS share
 
-If you need a kubernetes bare-matal using kvm vm check the [k8s-kvm project]()
+If you need a kubernetes bare-matal using kvm vm check the [k8s-kvm project](../ansible-kvm)
 
 See the [inventory file](inventories/lab.yml)
 
