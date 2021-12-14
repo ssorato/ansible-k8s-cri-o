@@ -116,9 +116,9 @@
     - name: Install packages
       apt:
         name: 
-          - kubelet
-          - kubeadm
-          - kubectl
+          - kubelet={{ crio_version }}.0-00
+          - kubeadm={{ crio_version }}.0-00
+          - kubectl={{ crio_version }}.0-00
         update_cache: true
         state: present
 
@@ -133,69 +133,132 @@
 
 - hosts: masters
   gather_facts: true
-  become: yes
+  become: no
   tags: masters
   tasks:
 
     - name: Copy kubeadm config
-      copy:
-        src: kubeadm-config.yml
+      become: yes
+      template:
+        src: kubeadm-config.yml.j2
         dest: /tmp/kubeadm-config.yml
         owner: root
         group: root
         mode: '0644'
 
+    - name: Check if control-plane was initialized
+      stat:
+        path: /etc/kubernetes/admin.conf 
+      register: admin_conf
+
     - name: Initializing control-plane node
+      become: yes
       shell: "kubeadm init --config /tmp/kubeadm-config.yml"
       register: result
       # until: result.stdout.find("Your Kubernetes master has initialized successfully!") != -1
       # retries: 7
       # delay: 60
+      when: not admin_conf.stat.exists
 
     - name: Show result
       debug:
         var: result
+      when: not admin_conf.stat.exists
 
     - name: Remove kubeadm config
+      become: yes
       file:
         path: /tmp/kubeadm-config.yml
         state: absent
-
-    - name: Configure kubectl on root user 
-      shell: |
-        mkdir -p $HOME/.kube
-        cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-        chown $(id -u):$(id -g) $HOME/.kube/config
-        echo 'source <(kubectl completion bash)' >>~/.bashrc
+      when: not admin_conf.stat.exists
 
     - name: Configure kubectl on ansible remote user 
-      become: no
+      become: yes
       shell: |
-        mkdir -p $HOME/.kube
-        cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
-        chown $(id -u):$(id -g) $HOME/.kube/config
-        echo 'source <(kubectl completion bash)' >>~/.bashrc
+        mkdir -p {{ ansible_user_dir }}/.kube
+        cp -f /etc/kubernetes/admin.conf {{ ansible_user_dir }}/.kube/config
+        chown {{ ansible_user_id }}:{{ ansible_user_id }} {{ ansible_user_dir }}/.kube/config
+        echo 'source <(kubectl completion bash)' >> {{ ansible_user_dir }}/.bashrc
 
-    - name: Add flanner network
-      shell: "kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml"
-
-    - name: Show nodes
+    - name: Get cluster nodes
       shell: "kubectl get nodes -o wide"
       register: result
 
-    - name: Show result
+    - name: Show cluster nodes
       debug:
         var: result
 
-    - name: Show kube-system pods
+    - name: Add flanner network
+      become: no
+      shell: "kubectl apply -f https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml"
+
+
+    - name: Get kube-system pods
       shell: "kubectl get pods -n kube-system"
       register: result
 
-    - name: Show result
+    - name: Show kube-system pods
       debug:
         var: result
 
+    - name: Install MetalLB
+      shell: |
+        kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.11.0/manifests/namespace.yaml
+        kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.11.0/manifests/metallb.yaml
+      tags:
+        - lb
+
+    - name: Copy MetalLB config file to the master node
+      template:
+        src: metallb.yml.j2
+        dest: /tmp/metallb.yml
+      tags:
+        - lb
+
+    - name: Configure MetalLB
+      shell: |
+        kubectl apply -f /tmp/metallb.yml
+      tags:
+        - lb
+  
+    - name: Remove MetalLB config file
+      file:
+        path: /tmp/metallb.yml
+        state: absent
+      tags:
+        - lb
+
+    - name: Get Metric Server config file
+      get_url:
+        url: https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+        dest: /tmp/metric-server.yaml
+        mode: '0640'
+      tags:
+        - metrics
+
+    - name: Configure Metric Server with insecure tls
+      lineinfile:
+        path: /tmp/metric-server.yaml
+        insertafter: "- args:"
+        line: "        - --kubelet-insecure-tls"
+      tags:
+        - metrics
+
+    - name: Create Metric Server
+      shell: |
+        kubectl apply -f /tmp/metric-server.yaml
+      tags:
+        - metrics
+  
+    - name: Remove Metric Server config file
+      file:
+        path: /tmp/metric-server.yaml
+        state: absent
+      tags:
+        - metrics
+
     - name: Create token to join cluster
+      become: yes
       shell: kubeadm token create --print-join-command
       register: join_command_raw
 

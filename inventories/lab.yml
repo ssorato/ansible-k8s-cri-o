@@ -1,10 +1,13 @@
 all:
+  vars:
+    cluster_network: 192.168.123.0/24
   children:
     k8s:
       vars:
         os_version: "xUbuntu_20.04"
-        crio_version: "1.20"
+        crio_version: "1.22"
         remote_user: ssorato
+        lb_pool: 192.168.123.250-192.168.123.253
       children:
         masters:
           hosts:
@@ -12,7 +15,8 @@ all:
         workers:
           hosts:
             192.168.123.62:
-            192.168.123.63:
     storages:
+      vars: 
+        nfs_disk: /dev/vdb
       hosts:
-        192.168.123.64:
+        192.168.123.63:

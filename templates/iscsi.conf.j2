@@ -1,4 +1,4 @@
 <target iqn.2020-07.lab.com:lun1>
-  backing-store /dev/vdb
-  initiator-address 192.168.123.64
+  backing-store {{ nfs_disk }}
+  initiator-address {{ groups['storages'][0] }}
 </target>
