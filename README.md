@@ -38,11 +38,11 @@ Check the NFS/iSCI server ( execute the commands inside the host )
 $ sudo exportfs -s
 /data  192.168.123.0/24(rw,wdelay,no_root_squash,no_subtree_check,sec=sys,rw,secure,no_root_squash,no_all_squash)
 
-$ sudo iscsiadm -m discovery -t st -p 192.168.123.64
+$ sudo iscsiadm -m discovery -t st -p 192.168.123.63
 192.168.123.64:3260,1 iqn.2020-07.lab.com:lun1
 ```
 
-# Demo application
+# Traefik Ingress Controller demo application
 
 Install Traefik Ingress
 
@@ -55,7 +55,7 @@ $ helm install traefik traefik/traefik
 deploy the application
 
 ```bash
-$ kubectl apply -f demo/
+$ kubectl apply -f demo-traefik/
 ```
 
 Get the load balancer IP
@@ -74,3 +74,34 @@ Test the application
 $ curl 192.168.123.250
 ```
 
+# Nginx Ingress Controller demo application
+
+Install Nginx Ingress
+
+```bash
+$ kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.1.0/deploy/static/provider/baremetal/deploy.yaml
+```
+
+deploy the application
+
+```bash
+$ kubectl apply -f demo-nginx/
+```
+
+Get the load balancer IP
+
+```bash
+$ kubectl -n ingress-nginx get svc ingress-nginx-controller
+NAME                       TYPE           CLUSTER-IP      EXTERNAL-IP       PORT(S)                      AGE
+ingress-nginx-controller   LoadBalancer   10.99.148.104   192.168.123.250   80:31644/TCP,443:30111/TCP   6m31s
+```
+
+Test the application
+
+```bash
+$ curl http://192.168.123.250/apple
+apple
+
+$ curl http://192.168.123.250/banana
+banana
+```
