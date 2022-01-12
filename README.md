@@ -4,7 +4,7 @@ The ansible playbook is based on [Kubernetes setup with CRI-O Runtime](https://g
 
 I have also added a storage with iSCSI and NFS share and a MetalLB load balancer.
 
-If you need a kubernetes bare-matal using kvm vm check the [k8s-kvm project](https://github.com/ssorato/ansible-kvm)
+If you need a kubernetes bare-matal using kvm vm check the [k8s-kvm project](https://github.com/ssorato/terraform-kvm)
 
 See the [inventory file](inventories/lab.yml)
 
