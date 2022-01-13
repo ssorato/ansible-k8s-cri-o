@@ -55,7 +55,7 @@ $ helm install traefik traefik/traefik
 deploy the application
 
 ```bash
-$ kubectl apply -f demo-traefik/
+$ kubectl apply -f demos/ingress-traefik/
 ```
 
 Get the load balancer IP
@@ -85,7 +85,7 @@ $ kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/co
 deploy the application
 
 ```bash
-$ kubectl apply -f demo-nginx/
+$ kubectl apply -f demos/ingress-nginx/
 ```
 
 Get the load balancer IP

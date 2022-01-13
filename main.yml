@@ -329,3 +329,16 @@
         enabled: yes
         state: restarted
         name: tgt
+
+    - name: Allow ALL initiators to connect to this target
+      shell:
+        tgtadm --lld iscsi --mode target --op bind --tid 1 --initiator-address ALL
+
+    - name: Get available LUNs
+      shell:
+        tgtadm --mode target --op show
+      register: result
+
+    - name: Show available LUNs
+      debug:
+        var: result

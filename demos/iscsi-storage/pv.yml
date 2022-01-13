@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: pv-iscsi
+spec:
+  capacity:
+    storage: 1Gi
+  accessModes:
+  - ReadWriteOnce
+  iscsi:
+    targetPortal: 192.168.123.63:3260
+    iqn: iqn.2020-07.lab.com:lun1
+    lun: 1
+    fsType: ext4
+    readOnly: false
